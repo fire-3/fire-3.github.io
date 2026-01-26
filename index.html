@@ -11,10 +11,11 @@
 </head>
     <!-- 极简音乐控制 -->
     <div class="simple-music">
-        <audio id="bgm" loop autoplay>
-            <source src="music/bgm.mp3" type="audio/mpeg">
-            你的浏览器不支持音频播放
-        </audio>
+       <!-- 修改现有的audio标签 -->
+<audio id="bgm" loop preload="auto" crossorigin="anonymous">
+    <source src="music/bgm.mp3" type="audio/mpeg">
+    <source src="music/bgm.ogg" type="audio/ogg"> <!-- 可选，兼容性更好 -->
+</audio>
         <button id="music-toggle" class="music-toggle-btn" title="点击暂停音乐">
             <i class="fas fa-volume-up"></i>
             <i class="fas fa-volume-mute"></i>
@@ -140,22 +141,38 @@
         
         
         
-        <!-- 社交链接 -->
-        <div class="author-social">
-            <a href="#" class="social-link" title="GitHub">
-                <i class="fab fa-github"></i>
-            </a>
-            <a href="#" class="social-link" title="邮箱">
-                <i class="fas fa-envelope"></i>
-            </a>
-            <a href="#" class="social-link" title="Bilibili">
-                <i class="fas fa-play-circle"></i>
-            </a>
-            <a href="#" class="social-link" title="博客">
-                <i class="fas fa-blog"></i>
-            </a>
-        </div>
-    </div>
+       <!-- 社交链接 -->
+<div class="author-social">
+    <a href="https://github.com/fire-3" 
+       class="social-link" 
+       target="_blank"
+       title="GitHub - 查看我的代码"
+       onclick="trackSocialClick('github')">
+        <i class="fab fa-github"></i>
+    </a>
+    
+   <!-- 把现有的邮箱链接完全替换为这个 -->
+<a href="javascript:void(0)" 
+   class="social-link" 
+   title="点击复制邮箱地址"
+   onclick="copyToClipboard('你的邮箱@example.com', 'email')">
+    <i class="fas fa-envelope"></i>
+</a>
+    
+    <a href="https://space.bilibili.com/277602164" 
+       class="social-link" 
+       target="_blank"
+       title="Bilibili - 关注我的频道"
+       onclick="trackSocialClick('bilibili')">
+        <i class="fas fa-play-circle"></i>
+    </a>
+    
+    <a href="#" 
+       class="social-link" 
+       title="更多联系方式"
+       onclick="showContactModal()">
+        <i class="fas fa-ellipsis-h"></i>
+    </a>
 </div>
             
             <!-- 分类 -->
