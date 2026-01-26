@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Language" content="zh-CN, ja, en">
+    <title>炎诉的个人博客</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- 图标和字体 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+    <!-- 极简音乐控制 -->
+    <div class="simple-music">
+        <audio id="bgm" loop autoplay>
+            <source src="music/bgm.mp3" type="audio/mpeg">
+            你的浏览器不支持音频播放
+        </audio>
+        <button id="music-toggle" class="music-toggle-btn" title="点击暂停音乐">
+            <i class="fas fa-volume-up"></i>
+            <i class="fas fa-volume-mute"></i>
+        </button>
+    </div>
+<body>
+ <!-- 图片背景层 -->
+    <div class="bg-image-layer"></div>
+    
+    <!-- 粒子效果层 -->
+    <canvas id="particles-bg"></canvas>
+    
+    <!-- 内容遮罩层（让文字更清晰） -->
+    <div class="bg-overlay"></div>
+    <!-- 顶部导航 -->
+    <header class="site-header">
+        <div class="container">
+            <div class="header-content">
+                <!-- 博客标题 -->
+                <div class="site-brand">
+                    <h1 class="site-title">
+                        <a href="index.html">今天又学习了么</a>
+                    </h1>
+                    <p class="site-subtitle">好きなことを好きと言っていいんだよ 好きなことを好きにやっていいんだよ
+</p>
+                </div>
+                
+                <!-- 导航菜单 -->
+                <nav class="site-nav">
+                    <a href="index.html" class="nav-item">首页</a>
+                    <a href="#categories" class="nav-item">分类</a>
+                    <a href="about.html" class="nav-item">关于</a>
+                    <a href="#archive" class="nav-item">归档</a>
+                </nav>
+                
+                <!-- 主题切换按钮 -->
+                <button id="theme-toggle" class="theme-btn">
+                    <i class="fas fa-moon"></i>
+                    <i class="fas fa-sun"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容区 -->
+    <div class="container main-container">
+        <main class="content-area">
+            <!-- 文章列表 -->
+            <article class="blog-post">
+                <div class="post-header">
+                    <!-- 文章标题 -->
+                    <h2 class="post-title">
+                        <a href="archive/post1.html">文章标题</a>
+                    </h2>
+                    <!-- 文章元信息 -->
+                    <div class="post-meta">
+                        <span class="post-date">发布日期</span>
+                        <span class="post-category">分类</span>
+                        <span class="post-readtime">阅读时间</span>
+                    </div>
+                </div>
+                
+                <!-- 文章摘要 -->
+                <div class="post-content">
+                    <p>文章摘要内容...</p>
+                </div>
+                
+                <!-- 文章底部 -->
+                <div class="post-footer">
+                    <a href="archive/post1.html" class="read-more">继续阅读 →</a>
+                    <div class="post-tags">
+                        <span class="tag">标签1</span>
+                        <span class="tag">标签2</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- 更多文章... -->
+            
+            <!-- 分页 -->
+            <div class="pagination">
+                <a href="#" class="page-btn">上一页</a>
+                <span class="page-info">页码信息</span>
+                <a href="#" class="page-btn">下一页</a>
+            </div>
+        </main>
+
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <!-- 搜索框 -->
+            <div class="sidebar-widget search-widget">
+                <div class="widget-title">
+                    <h3>搜索</h3>
+                </div>
+                <div class="widget-content">
+                    <input type="text" placeholder="搜索文章...">
+                </div>
+            </div>
+            
+            <!-- 关于 -->
+<div class="sidebar-widget about-widget">
+    <div class="widget-title">
+        <h3><i class="fas fa-user"></i> About me</h3>
+    </div>
+    <div class="widget-content">
+        <!-- 头像部分 -->
+        <div class="author-avatar">
+            <img src="images/avatar.jpg" alt="炎诉的头像" class="avatar">
+            <!-- <div class="default-avatar">
+                <i class="fas fa-user-graduate"></i>
+            </div> -->
+        </div>
+        
+        <!-- 名字 -->
+        <h4 class="author-name">炎诉</h4>
+        
+        <!-- 介绍 -->
+        <p class="author-bio">
+            来自上海交通大学<br>
+            正在筹备跑路的物理er<br>
+            什么都懂一点，什么都只懂一点
+        </p>
+        
+        
+        
+        <!-- 社交链接 -->
+        <div class="author-social">
+            <a href="#" class="social-link" title="GitHub">
+                <i class="fab fa-github"></i>
+            </a>
+            <a href="#" class="social-link" title="邮箱">
+                <i class="fas fa-envelope"></i>
+            </a>
+            <a href="#" class="social-link" title="Bilibili">
+                <i class="fas fa-play-circle"></i>
+            </a>
+            <a href="#" class="social-link" title="博客">
+                <i class="fas fa-blog"></i>
+            </a>
+        </div>
+    </div>
+</div>
+            
+            <!-- 分类 -->
+            <div class="sidebar-widget categories-widget">
+                <div class="widget-title">
+                    <h3>分类</h3>
+                </div>
+                <div class="widget-content">
+                    <!-- 分类列表 -->
+                </div>
+            </div>
+            
+            <!-- 最新文章 -->
+            <div class="sidebar-widget recent-posts">
+                <div class="widget-title">
+                    <h3>最新文章</h3>
+                </div>
+                <div class="widget-content">
+                    <!-- 最新文章列表 -->
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="site-footer">
+        <div class="container">
+            <p>版权信息</p>
+            <p>联系方式或其它信息</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
