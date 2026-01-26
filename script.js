@@ -272,6 +272,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     //初始化音乐播放器
     initSimpleMusic();
+
+    // 初始化社交统计（如果要加的话）
+    initSocialFunctions(); 
     
     // 简单的搜索功能（可按需实现）
     function searchArticles() {
@@ -413,99 +416,301 @@ if (themeToggle) {
     // 初始更新按钮状态
     updateThemeButton(document.documentElement.getAttribute('data-theme'));
 }
-// ===== 极简音乐控制 =====
+// ===== 简单稳定版音乐控制 =====
 function initSimpleMusic() {
     const audio = document.getElementById('bgm');
     const toggleBtn = document.getElementById('music-toggle');
     
-    if (!audio || !toggleBtn) return;
+    if (!audio || !toggleBtn) {
+        console.log('❌ 找不到音乐元素');
+        return;
+    }
     
-    // 设置默认音量（避免太吵）
-    audio.volume = 0.2;
+    console.log('🎵 初始化音乐播放器...');
     
-    // 自动播放（现代浏览器需要用户交互）
-    let userInteracted = false;
+    // 基础设置
+    audio.volume = 0.3;
+    audio.loop = true;
+    audio.preload = 'auto'; // 让浏览器决定如何预加载
     
-    function tryAutoPlay() {
-        if (!userInteracted) {
-            audio.play().then(() => {
-                console.log('音乐自动播放成功');
-            }).catch(error => {
-                console.log('自动播放被阻止，需要用户点击页面');
-                // 显示提示
-                toggleBtn.style.animation = 'pulse 2s infinite';
-                toggleBtn.title = '点击页面任意处启用音乐';
-            });
+    // 立即显示正常按钮（不显示加载）
+    toggleBtn.innerHTML = '<i class="fas fa-volume-up"></i><i class="fas fa-volume-mute"></i>';
+    toggleBtn.title = '点击播放音乐';
+    toggleBtn.classList.add('muted'); // 初始为暂停状态
+    
+    // 移除任何加载动画
+    toggleBtn.style.animation = '';
+    
+    // 标记是否已经提示过用户
+    let hasShownHint = false;
+    
+    // 简单的点击控制函数
+    async function toggleMusic() {
+        try {
+            if (audio.paused) {
+                // 尝试播放
+                await audio.play();
+                console.log('▶️ 音乐播放成功');
+                toggleBtn.classList.remove('muted');
+                toggleBtn.title = '点击暂停音乐';
+            } else {
+                // 暂停
+                audio.pause();
+                console.log('⏸️ 音乐已暂停');
+                toggleBtn.classList.add('muted');
+                toggleBtn.title = '点击播放音乐';
+            }
+        } catch (error) {
+            console.log('⚠️ 播放失败:', error.message);
+            
+            // 如果是自动播放被阻止，提示用户
+            if (error.name === 'NotAllowedError' && !hasShownHint) {
+                hasShownHint = true;
+                
+                // 显示友好提示
+                toggleBtn.title = '请先点击页面任意位置';
+                toggleBtn.style.animation = 'pulse 1.5s infinite';
+                toggleBtn.style.background = 'rgba(255, 193, 7, 0.9)';
+                
+                // 添加一次性页面点击监听
+                const enableMusic = () => {
+                    toggleBtn.style.animation = '';
+                    toggleBtn.style.background = '';
+                    toggleBtn.title = '点击播放音乐';
+                    
+                    // 用户交互后可以播放了
+                    document.hasUserInteracted = true;
+                };
+                
+                document.addEventListener('click', enableMusic, { once: true });
+                document.addEventListener('touchstart', enableMusic, { once: true });
+                document.addEventListener('keydown', enableMusic, { once: true });
+                
+                // 5秒后自动恢复
+                setTimeout(() => {
+                    toggleBtn.style.animation = '';
+                    toggleBtn.style.background = '';
+                    toggleBtn.title = '点击播放音乐';
+                }, 5000);
+            }
         }
     }
     
-    // 页面首次点击时启用音乐
-    document.addEventListener('click', () => {
-        if (!userInteracted) {
-            userInteracted = true;
-            audio.play();
-            toggleBtn.style.animation = '';
-            toggleBtn.title = '点击暂停音乐';
-        }
-    }, { once: true });
-    
-    // 按钮点击切换播放/暂停
-    toggleBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // 防止触发上面的document点击
-        
-        if (audio.paused) {
-            audio.play();
-            toggleBtn.classList.remove('muted');
-            toggleBtn.title = '点击暂停音乐';
-        } else {
-            audio.pause();
-            toggleBtn.classList.add('muted');
-            toggleBtn.title = '点击播放音乐';
-        }
+    // 按钮点击事件
+    toggleBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleMusic();
     });
     
-    // 页面离开时自动暂停（省电）
-    document.addEventListener('visibilitychange', () => {
+    // 页面可见性变化时暂停/继续
+    document.addEventListener('visibilitychange', function() {
         if (document.hidden) {
+            // 页面隐藏时暂停
             if (!audio.paused) {
                 audio.dataset.wasPlaying = 'true';
                 audio.pause();
                 toggleBtn.classList.add('muted');
             }
         } else if (audio.dataset.wasPlaying === 'true') {
-            audio.play();
-            toggleBtn.classList.remove('muted');
-            delete audio.dataset.wasPlaying;
+            // 页面恢复时继续播放
+            setTimeout(() => {
+                audio.play().then(() => {
+                    toggleBtn.classList.remove('muted');
+                    delete audio.dataset.wasPlaying;
+                });
+            }, 300);
         }
     });
     
-    // 添加脉动动画样式
-    if (!document.querySelector('#pulse-style')) {
-        const style = document.createElement('style');
-        style.id = 'pulse-style';
-        style.textContent = `
-            @keyframes pulse {
-                0% { transform: scale(1); }
-                50% { transform: scale(1.1); }
-                100% { transform: scale(1); }
-            }
-        `;
-        document.head.appendChild(style);
+    // 加载完成时更新状态
+    audio.addEventListener('canplay', function() {
+        console.log('✅ 音乐可以播放了');
+        // 如果之前是播放状态，尝试恢复
+        if (audio.dataset.shouldPlay === 'true') {
+            audio.play().then(() => {
+                toggleBtn.classList.remove('muted');
+                delete audio.dataset.shouldPlay;
+            });
+        }
+    });
+    
+    // 加载失败处理
+    audio.addEventListener('error', function() {
+        console.error('❌ 音乐加载失败');
+        toggleBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+        toggleBtn.title = '音乐加载失败';
+        toggleBtn.style.background = '#ff4444';
+        toggleBtn.onclick = null; // 禁用点击
+    });
+    
+    // 如果用户已经交互过，尝试自动播放
+    if (document.hasUserInteracted) {
+        setTimeout(() => {
+            audio.play().then(() => {
+                toggleBtn.classList.remove('muted');
+                toggleBtn.title = '点击暂停音乐';
+            });
+        }, 1000);
     }
     
-    // 尝试自动播放
-    setTimeout(tryAutoPlay, 1000);
+    console.log('🎵 音乐播放器初始化完成');
+}// ===== 社交链接功能 =====
+function trackSocialClick(platform) {
+    console.log(`📊 社交链接点击: ${platform}`);
+    
+    // 本地记录（localStorage）
+    try {
+        let socialStats = JSON.parse(localStorage.getItem('blog_social_stats') || '{}');
+        socialStats[platform] = (socialStats[platform] || 0) + 1;
+        socialStats.total = (socialStats.total || 0) + 1;
+        socialStats.lastClick = new Date().toISOString();
+        localStorage.setItem('blog_social_stats', JSON.stringify(socialStats));
+        
+        console.log('📈 社交统计更新:', socialStats);
+    } catch (e) {
+        console.log('统计保存失败:', e);
+    }
 }
 
-// ===== 然后在DOMContentLoaded事件中调用它 =====
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('博客加载完成');
+// 只有一个 showContactModal 函数！
+function showContactModal() {
+    const modalHTML = `
+        <div class="contact-modal" id="contactModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📫 联系我</h3>
+                    <button class="close-modal" onclick="closeContactModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="contact-method">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <h4>邮箱</h4>
+                            <p>2045856582@qq.com</p>
+                            <button class="copy-btn" onclick="copyToClipboard('你的邮箱@example.com', 'email')">
+                                复制邮箱
+                            </button>
+                        </div>
+                    </div>
+                    <div class="contact-method">
+                        <i class="fab fa-weixin"></i>
+                        <div>
+                            <h4>微信</h4>
+                            <p>不告诉你</p>
+                        </div>
+                    </div>
+                    <div class="contact-method">
+                        <i class="fab fa-qq"></i>
+                        <div>
+                            <h4>QQ</h4>
+                            <p>2045856582</p>
+                            <button class="copy-btn" onclick="copyToClipboard('你的QQ号', 'qq')">
+                                复制QQ号
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <p>通常会在24小时内回复 😊</p>
+                </div>
+            </div>
+        </div>
+    `;
     
-    // 初始化粒子效果
-    const particlesController = initParticles();
+    // 添加模态框到页面
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
     
-    // 初始化音乐播放器 ⬅️ 添加这一行！
-    initSimpleMusic();
+    // 点击模态框背景关闭
+    document.getElementById('contactModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeContactModal();
+        }
+    });
+}
+
+function closeContactModal() {
+    const modal = document.getElementById('contactModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function copyToClipboard(text, type) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert(`已复制${type === 'email' ? '邮箱地址' : 'QQ号'}到剪贴板`);
+        trackSocialClick(`copy_${type}`);
+    }).catch(err => {
+        console.error('复制失败:', err);
+        // 降级方案
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert(`已复制${type === 'email' ? '邮箱地址' : 'QQ号'}到剪贴板`);
+    });
+}
+
+// ===== 键盘快捷键 =====
+document.addEventListener('keydown', function(e) {
+    // ESC键关闭模态框
+    if (e.key === 'Escape') {
+        closeContactModal();
+    }
     
-    // ... 其他初始化代码 ...
+    // Ctrl+G 打开GitHub
+    if (e.ctrlKey && e.key === 'g') {
+        e.preventDefault();
+        window.open('https://github.com/你的用户名', '_blank');
+        trackSocialClick('github_keyboard');
+    }
 });
+function copyEmailDirect() {
+    const email = '2045856582@qq.com';
+    copyToClipboard(email, 'email');
+    trackSocialClick('email_copy');
+}
+// ===== 邮箱复制功能 =====
+function copyEmailDirect(e) {
+    e.preventDefault(); // 阻止默认行为（重要！）
+    
+    const email = '2045856582@qq.com'; // 替换为你的真实邮箱
+    
+    // 使用现有的copyToClipboard函数
+    copyToClipboard(email, 'email');
+    
+    // 显示一个友好的提示（代替alert）
+    showCopyToast('📧 邮箱地址已复制到剪贴板！');
+}
+
+// 漂亮的通知提示
+function showCopyToast(message) {
+    // 移除现有的提示（如果有）
+    const existingToast = document.querySelector('.copy-toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    // 创建新提示
+    const toast = document.createElement('div');
+    toast.className = 'copy-toast';
+    toast.innerHTML = `
+        <div class="toast-content">
+            <i class="fas fa-check-circle"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    // 添加到页面
+    document.body.appendChild(toast);
+    
+    // 3秒后自动消失
+    setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
