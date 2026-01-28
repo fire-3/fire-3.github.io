@@ -8,6 +8,11 @@
     <link rel="stylesheet" href="style.css">
     <!-- 图标和字体 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 必须添加：Markdown解析库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- 可选：添加PWA支持 -->
+    <meta name="theme-color" content="#4a6fa5">
 </head>
     <!-- 极简音乐控制 -->
     <div class="simple-music">
@@ -63,43 +68,35 @@
     <!-- 主要内容区 -->
     <div class="container main-container">
         <main class="content-area">
-            <!-- 文章列表 -->
-            <article class="blog-post">
-                <div class="post-header">
-                    <!-- 文章标题 -->
-                    <h2 class="post-title">
-                        <a href="archive/post1.html">文章标题</a>
-                    </h2>
-                    <!-- 文章元信息 -->
-                    <div class="post-meta">
-                        <span class="post-date">发布日期</span>
-                        <span class="post-category">分类</span>
-                        <span class="post-readtime">阅读时间</span>
+            <!-- ===== 修改点1：文章列表容器 ===== -->
+            <div id="posts-container" class="posts-container">
+                <!-- JavaScript会动态加载文章到这里 -->
+                <!-- 保留静态示例作为回退 -->
+                <article class="blog-post">
+                    <div class="post-header">
+                        <h2 class="post-title">
+                            <a href="archive/post1.html">加载文章中...</a>
+                        </h2>
+                        <div class="post-meta">
+                            <span class="post-date">请稍候</span>
+                            <span class="post-category">加载中</span>
+                            <span class="post-readtime">...</span>
+                        </div>
                     </div>
-                </div>
-                
-                <!-- 文章摘要 -->
-                <div class="post-content">
-                    <p>文章摘要内容...</p>
-                </div>
-                
-                <!-- 文章底部 -->
-                <div class="post-footer">
-                    <a href="archive/post1.html" class="read-more">继续阅读 →</a>
-                    <div class="post-tags">
-                        <span class="tag">标签1</span>
-                        <span class="tag">标签2</span>
+                    <div class="post-content">
+                        <p>正在从 articles.json 加载文章数据...</p>
                     </div>
-                </div>
-            </article>
-
-            <!-- 更多文章... -->
+                    <div class="post-footer">
+                        <a href="javascript:void(0)" class="read-more" onclick="loadArticleList()">
+                            点击重试 <i class="fas fa-redo"></i>
+                        </a>
+                    </div>
+                </article>
+            </div>
             
-            <!-- 分页 -->
-            <div class="pagination">
-                <a href="#" class="page-btn">上一页</a>
-                <span class="page-info">页码信息</span>
-                <a href="#" class="page-btn">下一页</a>
+            <!-- ===== 修改点2：分页容器 ===== -->
+            <div class="pagination" id="pagination">
+                <!-- 分页将通过JavaScript动态生成 -->
             </div>
         </main>
 
@@ -116,64 +113,60 @@
             </div>
             
             <!-- 关于 -->
-<div class="sidebar-widget about-widget">
-    <div class="widget-title">
-        <h3><i class="fas fa-user"></i> About me</h3>
-    </div>
-    <div class="widget-content">
-        <!-- 头像部分 -->
-        <div class="author-avatar">
-            <img src="images/avatar.jpg" alt="炎诉的头像" class="avatar">
-            <!-- <div class="default-avatar">
-                <i class="fas fa-user-graduate"></i>
-            </div> -->
-        </div>
-        
-        <!-- 名字 -->
-        <h4 class="author-name">炎诉</h4>
-        
-        <!-- 介绍 -->
-        <p class="author-bio">
-            来自上海交通大学<br>
-            正在筹备跑路的物理er<br>
-            什么都懂一点，什么都只懂一点
-        </p>
-        
-        
-        
-       <!-- 社交链接 -->
-<div class="author-social">
-    <a href="https://github.com/fire-3" 
-       class="social-link" 
-       target="_blank"
-       title="GitHub - 查看我的代码"
-       onclick="trackSocialClick('github')">
-        <i class="fab fa-github"></i>
-    </a>
-    
-   <!-- 把现有的邮箱链接完全替换为这个 -->
-<a href="javascript:void(0)" 
-   class="social-link" 
-   title="点击复制邮箱地址"
-   onclick="copyToClipboard('你的邮箱@example.com', 'email')">
-    <i class="fas fa-envelope"></i>
-</a>
-    
-    <a href="https://space.bilibili.com/277602164" 
-       class="social-link" 
-       target="_blank"
-       title="Bilibili - 关注我的频道"
-       onclick="trackSocialClick('bilibili')">
-        <i class="fas fa-play-circle"></i>
-    </a>
-    
-    <a href="#" 
-       class="social-link" 
-       title="更多联系方式"
-       onclick="showContactModal()">
-        <i class="fas fa-ellipsis-h"></i>
-    </a>
-</div>
+            <div class="sidebar-widget about-widget">
+                <div class="widget-title">
+                    <h3><i class="fas fa-user"></i> About me</h3>
+                </div>
+                <div class="widget-content">
+                    <!-- 头像部分 -->
+                    <div class="author-avatar">
+                        <img src="images/avatar.jpg" alt="炎诉的头像" class="avatar">
+                    </div>
+                    
+                    <!-- 名字 -->
+                    <h4 class="author-name">炎诉</h4>
+                    
+                    <!-- 介绍 -->
+                    <p class="author-bio">
+                        来自上海交通大学<br>
+                        正在筹备跑路的物理er<br>
+                        什么都懂一点，什么都只懂一点
+                    </p>
+                    
+                    <!-- 社交链接 -->
+                    <div class="author-social">
+                        <a href="https://github.com/fire-3" 
+                           class="social-link" 
+                           target="_blank"
+                           title="GitHub - 查看我的代码"
+                           onclick="trackSocialClick('github')">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        
+                        <a href="javascript:void(0)" 
+                           class="social-link" 
+                           title="点击复制邮箱地址"
+                           onclick="copyToClipboard('你的邮箱@example.com', 'email')">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                        
+                        <a href="https://space.bilibili.com/277602164" 
+                           class="social-link" 
+                           target="_blank"
+                           title="Bilibili - 关注我的频道"
+                           onclick="trackSocialClick('bilibili')">
+                            <i class="fas fa-play-circle"></i>
+                        </a>
+                        
+                        <a href="#" 
+                           class="social-link" 
+                           title="更多联系方式"
+                           onclick="showContactModal()">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
             
             <!-- 分类 -->
             <div class="sidebar-widget categories-widget">
@@ -181,17 +174,20 @@
                     <h3>分类</h3>
                 </div>
                 <div class="widget-content">
-                    <!-- 分类列表 -->
+                    <!-- 分类列表将通过JavaScript动态生成 -->
                 </div>
             </div>
             
-            <!-- 最新文章 -->
+            <!-- ===== 修改点3：最新文章侧边栏 ===== -->
             <div class="sidebar-widget recent-posts">
                 <div class="widget-title">
                     <h3>最新文章</h3>
                 </div>
-                <div class="widget-content">
-                    <!-- 最新文章列表 -->
+                <div class="widget-content" id="recent-posts-list">
+                    <!-- 最新文章将通过JavaScript动态加载 -->
+                    <div style="text-align: center; color: #666; padding: 10px;">
+                        <i class="fas fa-spinner fa-spin"></i> 加载中...
+                    </div>
                 </div>
             </div>
         </aside>
