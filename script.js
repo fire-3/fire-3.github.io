@@ -273,8 +273,12 @@ document.addEventListener('DOMContentLoaded', function() {
     //初始化音乐播放器
     initSimpleMusic();
 
-    //文档添加功能
+    // 初始化文章列表
+if (typeof loadArticleList === 'function') {
     loadArticleList();
+} else {
+    console.error('loadArticleList函数未定义！');
+}
 
     // 初始化社交统计（如果要加的话）
     initSocialFunctions(); 
@@ -718,6 +722,7 @@ function showCopyToast(message) {
     }, 3000);
     // 加载文章列表
 }
+// ===== 文章系统函数 =====
 async function loadArticleList() {
     try {
         const response = await fetch('articles.json');
@@ -725,14 +730,28 @@ async function loadArticleList() {
         renderArticles(data.articles);
     } catch (error) {
         console.log('文章列表加载失败:', error);
+        showNoArticlesMessage();
     }
 }
 
 function renderArticles(articles) {
     const container = document.querySelector('.posts-container') || 
-                      document.getElementById('posts-container');
+                      document.getElementById('posts-container') ||
+                      document.querySelector('.content-area');
     
-    if (!container) return;
+    if (!container) {
+        console.log('找不到文章容器');
+        return;
+    }
+    
+    // 移除现有的文章模板（如果有）
+    const existingPosts = container.querySelectorAll('.blog-post');
+    existingPosts.forEach(post => post.remove());
+    
+    if (articles.length === 0) {
+        showNoArticlesMessage();
+        return;
+    }
     
     let html = '';
     articles.forEach(article => {
@@ -743,16 +762,24 @@ function renderArticles(articles) {
                         <a href="article.html?id=${article.id}">${article.title}</a>
                     </h2>
                     <div class="post-meta">
-                        <span class="post-date">${formatDate(article.date)}</span>
-                        <span class="post-category">${article.category}</span>
-                        <span class="post-readtime">${article.readTime}</span>
+                        <span class="post-date">
+                            <i class="far fa-calendar"></i> ${formatDate(article.date)}
+                        </span>
+                        <span class="post-category">
+                            <i class="fas fa-folder"></i> ${article.category}
+                        </span>
+                        <span class="post-readtime">
+                            <i class="far fa-clock"></i> ${article.readTime}
+                        </span>
                     </div>
                 </div>
                 <div class="post-content">
                     <p>${article.excerpt}</p>
                 </div>
                 <div class="post-footer">
-                    <a href="article.html?id=${article.id}" class="read-more">继续阅读 →</a>
+                    <a href="article.html?id=${article.id}" class="read-more">
+                        阅读全文 <i class="fas fa-arrow-right"></i>
+                    </a>
                     <div class="post-tags">
                         ${article.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
                     </div>
@@ -761,7 +788,43 @@ function renderArticles(articles) {
         `;
     });
     
-    container.innerHTML = html;
+    // 添加到现有内容之后
+    container.insertAdjacentHTML('beforeend', html);
 }
+
+function formatDate(dateString) {
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('zh-CN', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    } catch (e) {
+        return dateString;
+    }
+}
+
+function showNoArticlesMessage() {
+    const container = document.querySelector('.content-area') || 
+                      document.querySelector('.posts-container');
+    
+    if (container) {
+        container.innerHTML = `
+            <div class="no-posts-message">
+                <div class="message-icon">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <h3>还没有文章呢</h3>
+                <p>这里是空的，等待你的第一篇大作！</p>
+                <p class="hint">提示：请确保 articles.json 文件存在且格式正确。</p>
+            </div>
+        `;
+    }
+}
+
+// ===== 确保函数在全局可访问 =====
+window.loadArticleList = loadArticleList;
+
 
 
