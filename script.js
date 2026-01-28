@@ -276,20 +276,36 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始化社交统计（如果要加的话）
     initSocialFunctions(); 
 
-      setTimeout(() => {
-        console.log('开始自动加载文章列表...');
-        if (typeof loadArticleList === 'function') {
-            loadArticleList();
-        } else {
-            console.error('loadArticleList函数未定义！');
-        }
-    }, 500); // 延迟500ms确保其他初始化完成
-
-     setTimeout(() => {
-        if (typeof loadRecentPosts === 'function') {
-            loadRecentPosts();
-        }
-    }, 800);
+      // ===== 立即加载文章，不等待 =====
+    console.log('开始加载文章列表...');
+    
+    // 使用立即执行函数确保顺序
+    (function initArticles() {
+        // 先加载文章数据
+        loadArticleList().then(() => {
+            console.log('主文章列表加载完成');
+            // 再加载侧边栏
+            if (typeof loadRecentPosts === 'function') {
+                loadRecentPosts();
+            }
+        }).catch(error => {
+            console.error('文章加载失败:', error);
+            // 显示错误信息
+            const container = document.getElementById('posts-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="no-posts-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>加载失败</h3>
+                        <p>${error.message}</p>
+                        <button onclick="location.reload()" class="action-button">
+                            刷新页面
+                        </button>
+                    </div>
+                `;
+            }
+        });
+    })();
     
     // 简单的搜索功能（可按需实现）
     function searchArticles() {
@@ -740,17 +756,25 @@ async function loadArticleList() {
         }
         const data = await response.json();
         console.log('文章数据加载成功:', data);
+        
+        // 渲染主文章列表
         renderArticles(data.articles);
+        
+        // 同时加载侧边栏最新文章
+        renderRecentPosts(data.articles.slice(0, 5));
+        
+        return data;
+        
     } catch (error) {
         console.error('文章列表加载失败:', error);
         showNoArticlesMessage();
+        throw error;
     }
 }
 
 function renderArticles(articles) {
     console.log('开始渲染文章，数量:', articles.length);
     
-    // 尝试多个可能的容器选择器
     const container = document.querySelector('.posts-container') || 
                       document.getElementById('posts-container') ||
                       document.querySelector('.content-area') ||
@@ -764,7 +788,7 @@ function renderArticles(articles) {
     
     console.log('找到容器:', container);
     
-    // 如果当前有示例文章，先移除
+    // 移除现有文章
     const existingPosts = container.querySelectorAll('.blog-post');
     existingPosts.forEach(post => {
         console.log('移除现有文章:', post.querySelector('.post-title')?.textContent);
@@ -813,7 +837,6 @@ function renderArticles(articles) {
         `;
     });
     
-    // 添加到容器
     container.insertAdjacentHTML('beforeend', html);
     console.log('文章渲染完成');
 }
@@ -854,16 +877,12 @@ function showNoArticlesMessage() {
     }
 }
 
-// 确保函数全局可用
-window.loadArticleList = loadArticleList;
-window.showNoArticlesMessage = showNoArticlesMessage;
-
 // ===== 侧边栏最新文章加载 =====
 async function loadRecentPosts() {
     try {
         const response = await fetch('articles.json');
         const data = await response.json();
-        renderRecentPosts(data.articles.slice(0, 5)); // 只显示最近5篇
+        renderRecentPosts(data.articles.slice(0, 5));
     } catch (error) {
         console.error('加载最新文章失败:', error);
         showRecentPostsError();
@@ -912,36 +931,7 @@ function showRecentPostsError() {
     }
 }
 
-// ===== 更新文章列表函数，同时加载侧边栏 =====
-async function loadArticleList() {
-    try {
-        console.log('开始加载文章列表...');
-        const response = await fetch('articles.json');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log('文章数据加载成功:', data);
-        
-        // 渲染主文章列表
-        renderArticles(data.articles);
-        
-        // 同时加载侧边栏最新文章
-        renderRecentPosts(data.articles.slice(0, 5));
-        
-    } catch (error) {
-        console.error('文章列表加载失败:', error);
-        showNoArticlesMessage();
-    }
-}
-
 // ===== 确保函数全局可用 =====
 window.loadArticleList = loadArticleList;
 window.loadRecentPosts = loadRecentPosts;
 window.renderRecentPosts = renderRecentPosts;
-
-
-
-
-
-
