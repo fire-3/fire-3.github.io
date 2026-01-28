@@ -273,15 +273,13 @@ document.addEventListener('DOMContentLoaded', function() {
     //初始化音乐播放器
     initSimpleMusic();
 
-    // 初始化文章列表
-if (typeof loadArticleList === 'function') {
-    loadArticleList();
-} else {
-    console.error('loadArticleList函数未定义！');
-}
-
     // 初始化社交统计（如果要加的话）
     initSocialFunctions(); 
+
+     setTimeout(() => {
+        console.log('开始自动加载文章...');
+        loadArticleList();
+    }, 500); // 延迟500ms，确保其他初始化完成
     
     // 简单的搜索功能（可按需实现）
     function searchArticles() {
@@ -725,36 +723,53 @@ function showCopyToast(message) {
 // ===== 文章系统函数 =====
 async function loadArticleList() {
     try {
+        console.log('开始加载文章列表...');
         const response = await fetch('articles.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
+        console.log('文章数据加载成功:', data);
         renderArticles(data.articles);
     } catch (error) {
-        console.log('文章列表加载失败:', error);
+        console.error('文章列表加载失败:', error);
         showNoArticlesMessage();
     }
 }
 
 function renderArticles(articles) {
+    console.log('开始渲染文章，数量:', articles.length);
+    
+    // 尝试多个可能的容器选择器
     const container = document.querySelector('.posts-container') || 
                       document.getElementById('posts-container') ||
-                      document.querySelector('.content-area');
+                      document.querySelector('.content-area') ||
+                      document.querySelector('main');
     
     if (!container) {
-        console.log('找不到文章容器');
+        console.error('找不到文章容器！');
+        showNoArticlesMessage();
         return;
     }
     
-    // 移除现有的文章模板（如果有）
+    console.log('找到容器:', container);
+    
+    // 如果当前有示例文章，先移除
     const existingPosts = container.querySelectorAll('.blog-post');
-    existingPosts.forEach(post => post.remove());
+    existingPosts.forEach(post => {
+        console.log('移除现有文章:', post.querySelector('.post-title')?.textContent);
+        post.remove();
+    });
     
     if (articles.length === 0) {
+        console.log('没有文章数据');
         showNoArticlesMessage();
         return;
     }
     
     let html = '';
-    articles.forEach(article => {
+    articles.forEach((article, index) => {
+        console.log(`处理文章 ${index + 1}:`, article.title);
         html += `
             <article class="blog-post">
                 <div class="post-header">
@@ -769,27 +784,28 @@ function renderArticles(articles) {
                             <i class="fas fa-folder"></i> ${article.category}
                         </span>
                         <span class="post-readtime">
-                            <i class="far fa-clock"></i> ${article.readTime}
+                            <i class="far fa-clock"></i> ${article.readTime || '5分钟'}
                         </span>
                     </div>
                 </div>
                 <div class="post-content">
-                    <p>${article.excerpt}</p>
+                    <p>${article.excerpt || '文章摘要...'}</p>
                 </div>
                 <div class="post-footer">
                     <a href="article.html?id=${article.id}" class="read-more">
                         阅读全文 <i class="fas fa-arrow-right"></i>
                     </a>
                     <div class="post-tags">
-                        ${article.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        ${(article.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
                     </div>
                 </div>
             </article>
         `;
     });
     
-    // 添加到现有内容之后
+    // 添加到容器
     container.insertAdjacentHTML('beforeend', html);
+    console.log('文章渲染完成');
 }
 
 function formatDate(dateString) {
@@ -801,13 +817,15 @@ function formatDate(dateString) {
             day: 'numeric'
         });
     } catch (e) {
-        return dateString;
+        console.warn('日期格式化失败:', dateString);
+        return dateString || '未知日期';
     }
 }
 
 function showNoArticlesMessage() {
     const container = document.querySelector('.content-area') || 
-                      document.querySelector('.posts-container');
+                      document.querySelector('.posts-container') ||
+                      document.querySelector('main');
     
     if (container) {
         container.innerHTML = `
@@ -817,14 +835,19 @@ function showNoArticlesMessage() {
                 </div>
                 <h3>还没有文章呢</h3>
                 <p>这里是空的，等待你的第一篇大作！</p>
-                <p class="hint">提示：请确保 articles.json 文件存在且格式正确。</p>
+                <p class="hint">请检查 articles.json 文件是否存在且格式正确。</p>
+                <button onclick="loadArticleList()" class="action-button">
+                    <i class="fas fa-redo"></i> 重新加载
+                </button>
             </div>
         `;
     }
 }
 
-// ===== 确保函数在全局可访问 =====
+// 确保函数全局可用
 window.loadArticleList = loadArticleList;
+window.showNoArticlesMessage = showNoArticlesMessage;
+
 
 
 
