@@ -43,89 +43,119 @@
     </div>
     
     <script src="script.js"></script>
-    <script>
-    // 文章详情页专用逻辑
-    document.addEventListener('DOMContentLoaded', async function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const articleId = urlParams.get('id');
-        
-        if (!articleId) {
-            window.location.href = 'index.html';
-            return;
-        }
-        
-        try {
-            // 加载文章数据
-            const response = await fetch('articles.json');
-            const data = await response.json();
-            const article = data.articles.find(a => a.id == articleId);
-            
-            if (!article) {
-                throw new Error('文章不存在');
-            }
-            
-            // 渲染文章
-            renderArticleDetail(article);
-            
-        } catch (error) {
-            console.error('加载文章失败:', error);
-            showErrorMessage('文章加载失败');
-        }
-    });
+    // 在 article.html 的 <script> 标签中替换整个逻辑
+document.addEventListener('DOMContentLoaded', async function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const articleId = urlParams.get('id');
     
-    async function renderArticleDetail(article) {
-    const container = document.getElementById('article-content');
+    console.log('文章ID:', articleId);
+    
+    if (!articleId) {
+        console.log('没有文章ID，跳转到首页');
+        window.location.href = 'index.html';
+        return;
+    }
     
     try {
-        // 获取文章内容
-        let content = article.content || '';
+        // 1. 先加载文章数据
+        console.log('加载articles.json...');
+        const response = await fetch('articles.json');
+        if (!response.ok) {
+            throw new Error(`articles.json加载失败: ${response.status}`);
+        }
         
-        // 如果有单独的MD文件，尝试加载
+        const data = await response.json();
+        console.log('找到文章数据，总数:', data.articles.length);
+        
+        // 2. 查找对应文章
+        const article = data.articles.find(a => a.id == articleId);
+        if (!article) {
+            throw new Error(`找不到ID为 ${articleId} 的文章`);
+        }
+        
+        console.log('找到文章:', article.title);
+        console.log('文章数据:', article);
+        
+        // 3. 获取文章内容
+        let content = '';
+        
         if (article.file) {
+            console.log('尝试从文件加载:', article.file);
             try {
                 const fileResponse = await fetch(article.file);
                 if (fileResponse.ok) {
-                    const markdown = await fileResponse.text();
-                    console.log('从文件加载成功，大小:', markdown.length);
+                    const fileContent = await fileResponse.text();
+                    console.log('文件加载成功，大小:', fileContent.length);
                     
-                    // 提取正文部分（去掉YAML front matter）
-                    // 查找第一个#开头的行作为正文开始
-                    const lines = markdown.split('\n');
-                    let contentStartIndex = 0;
+                    // 提取Markdown正文（去掉可能的YAML front matter）
+                    const lines = fileContent.split('\n');
+                    let contentLines = [];
+                    let inContent = false;
                     
-                    for (let i = 0; i < lines.length; i++) {
-                        if (lines[i].trim().startsWith('# ')) {
-                            contentStartIndex = i;
-                            break;
+                    for (const line of lines) {
+                        if (line.trim().startsWith('#') || inContent) {
+                            inContent = true;
+                            contentLines.push(line);
                         }
                     }
                     
-                    content = lines.slice(contentStartIndex).join('\n');
-                    
+                    content = contentLines.join('\n');
                     if (!content.trim()) {
-                        throw new Error('文件内容为空');
+                        content = fileContent; // 如果没找到#开头，使用全部内容
                     }
+                } else {
+                    console.warn('文件加载失败，状态:', fileResponse.status);
                 }
             } catch (fileError) {
-                console.warn('加载文件失败，使用JSON内容:', fileError);
-                // 继续使用JSON中的content
+                console.warn('文件加载错误:', fileError);
             }
         }
         
-        // 确保content不为空
-        if (!content || content.trim() === '') {
-            content = `# ${article.title}\n\n文章内容正在加载中...\n\n*如果长时间无法加载，请检查文件路径是否正确。*`;
+        // 4. 如果文件内容为空，使用JSON中的content
+        if (!content.trim() && article.content) {
+            console.log('使用JSON中的content');
+            content = article.content;
         }
         
-        console.log('最终文章内容长度:', content.length);
+        // 5. 如果仍然为空，使用默认内容
+        if (!content.trim()) {
+            console.warn('文章内容为空，使用默认内容');
+            content = `# ${article.title}\n\n文章内容正在加载中...\n\n*请检查 ${article.file || '文章文件'} 是否存在且内容正确。*`;
+        }
         
-        // 使用marked解析，确保传入有效内容
+        console.log('最终内容长度:', content.length);
+        console.log('内容预览:', content.substring(0, 100));
+        
+        // 6. 渲染文章
+        renderArticle(article, content);
+        
+    } catch (error) {
+        console.error('加载文章失败:', error);
+        showErrorMessage(`文章加载失败: ${error.message}`);
+    }
+});
+
+function renderArticle(article, content) {
+    const container = document.getElementById('article-content');
+    if (!container) return;
+    
+    try {
+        // 确保marked有内容
+        if (!content || content.trim() === '') {
+            throw new Error('文章内容为空');
+        }
+        
+        // 解析Markdown
         let parsedContent = '';
         try {
             parsedContent = marked.parse(content);
         } catch (markedError) {
             console.error('Markdown解析失败:', markedError);
-            parsedContent = `<h1>${article.title}</h1><p>文章内容解析失败，原始内容：</p><pre>${escapeHtml(content.substring(0, 500))}</pre>`;
+            parsedContent = `<h1>${escapeHtml(article.title)}</h1>
+                            <div class="markdown-error">
+                                <p>Markdown解析失败，显示原始内容：</p>
+                                <pre>${escapeHtml(content.substring(0, 1000))}</pre>
+                            </div>`;
         }
         
         // 创建文章HTML
@@ -167,49 +197,49 @@
         container.innerHTML = `
             <div class="no-posts-message">
                 <i class="fas fa-exclamation-triangle"></i>
-                <h3>文章加载失败</h3>
-                <p>错误: ${error.message}</p>
-                <p>文章ID: ${article.id}</p>
-                <p>文章标题: ${article.title}</p>
+                <h3>文章渲染失败</h3>
+                <p>${error.message}</p>
+                <p><strong>文章ID:</strong> ${article.id}</p>
+                <p><strong>文章标题:</strong> ${article.title}</p>
+                <p><strong>文件路径:</strong> ${article.file || '无'}</p>
                 <a href="index.html" class="action-button">返回首页</a>
             </div>
         `;
     }
 }
 
-// HTML转义函数
+// 辅助函数
+function formatDate(dateString) {
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('zh-CN', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    } catch (e) {
+        return dateString || '未知日期';
+    }
+}
+
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
-    
-    function formatDate(dateString) {
-        try {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('zh-CN', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-        } catch (e) {
-            return dateString || '未知日期';
-        }
+
+function showErrorMessage(msg) {
+    const container = document.getElementById('article-content');
+    if (container) {
+        container.innerHTML = `
+            <div class="no-posts-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>${msg}</h3>
+                <a href="index.html" class="action-button">返回首页</a>
+            </div>
+        `;
     }
-    
-    function showErrorMessage(msg) {
-        const container = document.getElementById('article-content');
-        if (container) {
-            container.innerHTML = `
-                <div class="no-posts-message">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h3>${msg}</h3>
-                    <a href="index.html" class="action-button">返回首页</a>
-                </div>
-            `;
-        }
-    }
-    </script>
+}
 </body>
 </html>
