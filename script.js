@@ -955,3 +955,41 @@ window.loadArticleList = loadArticleList;
 window.loadRecentPosts = loadRecentPosts;
 window.renderRecentPosts = renderRecentPosts;
 
+// ===== 页面加载完成后自动执行 =====
+// 放在所有函数定义之后，确保所有函数都已定义
+
+// 方法1：使用DOMContentLoaded事件
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔄 DOM已加载，开始初始化...');
+    
+    // 初始化现有功能
+    if (typeof initParticles === 'function') initParticles();
+    if (typeof initSimpleMusic === 'function') initSimpleMusic();
+    if (typeof initSocialFunctions === 'function') initSocialFunctions();
+    
+    // 强制加载文章 - 使用setTimeout确保DOM完全就绪
+    setTimeout(() => {
+        console.log('⏰ 定时器触发，开始加载文章...');
+        if (typeof window.loadArticleList === 'function') {
+            console.log('✅ 调用loadArticleList函数');
+            window.loadArticleList().then(() => {
+                console.log('🎉 文章加载完成');
+            }).catch(error => {
+                console.error('❌ 文章加载失败:', error);
+            });
+        } else {
+            console.error('❌ loadArticleList函数不存在！');
+        }
+    }, 100); // 100ms延迟确保DOM完全就绪
+});
+
+// 方法2：直接执行（如果DOM已经加载）
+if (document.readyState === 'loading') {
+    console.log('📄 文档还在加载，等待DOMContentLoaded');
+} else {
+    console.log('⚡ 文档已加载，立即执行文章加载');
+    if (typeof window.loadArticleList === 'function') {
+        window.loadArticleList();
+    }
+}
+
