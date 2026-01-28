@@ -858,6 +858,89 @@ function showNoArticlesMessage() {
 window.loadArticleList = loadArticleList;
 window.showNoArticlesMessage = showNoArticlesMessage;
 
+// ===== 侧边栏最新文章加载 =====
+async function loadRecentPosts() {
+    try {
+        const response = await fetch('articles.json');
+        const data = await response.json();
+        renderRecentPosts(data.articles.slice(0, 5)); // 只显示最近5篇
+    } catch (error) {
+        console.error('加载最新文章失败:', error);
+        showRecentPostsError();
+    }
+}
+
+function renderRecentPosts(articles) {
+    const container = document.getElementById('recent-posts-list');
+    if (!container) return;
+    
+    if (articles.length === 0) {
+        container.innerHTML = '<p style="color: #666; text-align: center;">暂无文章</p>';
+        return;
+    }
+    
+    let html = '<ul class="recent-posts-list">';
+    articles.forEach(article => {
+        html += `
+            <li>
+                <a href="article.html?id=${article.id}">
+                    <div class="recent-post-item">
+                        <h4>${article.title}</h4>
+                        <span class="post-date">${formatDate(article.date)}</span>
+                    </div>
+                </a>
+            </li>
+        `;
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+}
+
+function showRecentPostsError() {
+    const container = document.getElementById('recent-posts-list');
+    if (container) {
+        container.innerHTML = `
+            <div style="color: #ff6b6b; text-align: center; padding: 10px;">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>加载失败</p>
+                <button onclick="loadRecentPosts()" style="background: none; border: none; color: #4a6fa5; cursor: pointer;">
+                    重试
+                </button>
+            </div>
+        `;
+    }
+}
+
+// ===== 更新文章列表函数，同时加载侧边栏 =====
+async function loadArticleList() {
+    try {
+        console.log('开始加载文章列表...');
+        const response = await fetch('articles.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('文章数据加载成功:', data);
+        
+        // 渲染主文章列表
+        renderArticles(data.articles);
+        
+        // 同时加载侧边栏最新文章
+        renderRecentPosts(data.articles.slice(0, 5));
+        
+    } catch (error) {
+        console.error('文章列表加载失败:', error);
+        showNoArticlesMessage();
+    }
+}
+
+// ===== 确保函数全局可用 =====
+window.loadArticleList = loadArticleList;
+window.loadRecentPosts = loadRecentPosts;
+window.renderRecentPosts = renderRecentPosts;
+
+
 
 
 
