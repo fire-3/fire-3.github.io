@@ -276,36 +276,55 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始化社交统计（如果要加的话）
     initSocialFunctions(); 
 
-      // ===== 立即加载文章，不等待 =====
-    console.log('开始加载文章列表...');
-    
-    // 使用立即执行函数确保顺序
-    (function initArticles() {
-        // 先加载文章数据
-        loadArticleList().then(() => {
-            console.log('主文章列表加载完成');
-            // 再加载侧边栏
-            if (typeof loadRecentPosts === 'function') {
-                loadRecentPosts();
-            }
-        }).catch(error => {
-            console.error('文章加载失败:', error);
-            // 显示错误信息
+      // ===== 立即执行文章加载，不等待任何事件 =====
+    (function autoLoadArticles() {
+        console.log('🚀 开始自动加载文章...');
+        
+        // 先移除"点击重试"按钮的静态示例
+        const staticExample = document.querySelector('#posts-container .blog-post');
+        if (staticExample && staticExample.textContent.includes('点击重试')) {
+            staticExample.remove();
+            console.log('已移除静态示例');
+        }
+        
+        // 立即调用文章加载
+        if (typeof window.loadArticleList === 'function') {
+            console.log('✅ 找到loadArticleList函数，立即执行');
+            window.loadArticleList().catch(error => {
+                console.error('文章加载失败:', error);
+                // 显示错误信息
+                const container = document.getElementById('posts-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="no-posts-message">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>加载失败</h3>
+                            <p>${error.message}</p>
+                            <button onclick="window.loadArticleList()" class="action-button">
+                                手动重试
+                            </button>
+                        </div>
+                    `;
+                }
+            });
+        } else {
+            console.error('❌ loadArticleList函数未定义！');
+            // 直接显示错误
             const container = document.getElementById('posts-container');
             if (container) {
                 container.innerHTML = `
                     <div class="no-posts-message">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <h3>加载失败</h3>
-                        <p>${error.message}</p>
+                        <h3>脚本错误</h3>
+                        <p>loadArticleList函数未定义</p>
                         <button onclick="location.reload()" class="action-button">
                             刷新页面
                         </button>
                     </div>
                 `;
             }
-        });
-    })();
+        }
+    })(); // 立即执行函数
     
     // 简单的搜索功能（可按需实现）
     function searchArticles() {
@@ -935,3 +954,4 @@ function showRecentPostsError() {
 window.loadArticleList = loadArticleList;
 window.loadRecentPosts = loadRecentPosts;
 window.renderRecentPosts = renderRecentPosts;
+
