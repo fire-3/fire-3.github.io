@@ -717,6 +717,7 @@ function showCopyToast(message) {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
     // 加载文章列表
+}
 async function loadArticleList() {
     try {
         const response = await fetch('articles.json');
@@ -762,5 +763,5 @@ function renderArticles(articles) {
     
     container.innerHTML = html;
 }
-}
+
 
