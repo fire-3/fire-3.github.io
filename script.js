@@ -276,10 +276,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始化社交统计（如果要加的话）
     initSocialFunctions(); 
 
+      setTimeout(() => {
+        console.log('开始自动加载文章列表...');
+        if (typeof loadArticleList === 'function') {
+            loadArticleList();
+        } else {
+            console.error('loadArticleList函数未定义！');
+        }
+    }, 500); // 延迟500ms确保其他初始化完成
+
      setTimeout(() => {
-        console.log('开始自动加载文章...');
-        loadArticleList();
-    }, 500); // 延迟500ms，确保其他初始化完成
+        if (typeof loadRecentPosts === 'function') {
+            loadRecentPosts();
+        }
+    }, 800);
     
     // 简单的搜索功能（可按需实现）
     function searchArticles() {
@@ -847,6 +857,7 @@ function showNoArticlesMessage() {
 // 确保函数全局可用
 window.loadArticleList = loadArticleList;
 window.showNoArticlesMessage = showNoArticlesMessage;
+
 
 
 
