@@ -273,6 +273,9 @@ document.addEventListener('DOMContentLoaded', function() {
     //初始化音乐播放器
     initSimpleMusic();
 
+    //文档添加功能
+    loadArticleList();
+
     // 初始化社交统计（如果要加的话）
     initSocialFunctions(); 
     
@@ -713,4 +716,51 @@ function showCopyToast(message) {
         toast.classList.add('fade-out');
         setTimeout(() => toast.remove(), 300);
     }, 3000);
+    // 加载文章列表
+async function loadArticleList() {
+    try {
+        const response = await fetch('articles.json');
+        const data = await response.json();
+        renderArticles(data.articles);
+    } catch (error) {
+        console.log('文章列表加载失败:', error);
+    }
 }
+
+function renderArticles(articles) {
+    const container = document.querySelector('.posts-container') || 
+                      document.getElementById('posts-container');
+    
+    if (!container) return;
+    
+    let html = '';
+    articles.forEach(article => {
+        html += `
+            <article class="blog-post">
+                <div class="post-header">
+                    <h2 class="post-title">
+                        <a href="article.html?id=${article.id}">${article.title}</a>
+                    </h2>
+                    <div class="post-meta">
+                        <span class="post-date">${formatDate(article.date)}</span>
+                        <span class="post-category">${article.category}</span>
+                        <span class="post-readtime">${article.readTime}</span>
+                    </div>
+                </div>
+                <div class="post-content">
+                    <p>${article.excerpt}</p>
+                </div>
+                <div class="post-footer">
+                    <a href="article.html?id=${article.id}" class="read-more">继续阅读 →</a>
+                    <div class="post-tags">
+                        ${article.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                </div>
+            </article>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+}
+
