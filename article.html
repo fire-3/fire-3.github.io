@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章详情 - 炎诉的个人博客</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <!-- 背景层 -->
+    <div class="bg-image-layer"></div>
+    <canvas id="particles-bg"></canvas>
+    <div class="bg-overlay"></div>
+    
+    <!-- 头部导航 -->
+    <header class="site-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="site-brand">
+                    <h1 class="site-title">
+                        <a href="index.html">今天又学习了么</a>
+                    </h1>
+                </div>
+                <nav class="site-nav">
+                    <a href="index.html" class="nav-item">返回首页</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 文章内容 -->
+    <div class="container main-container">
+        <main class="content-area">
+            <div id="article-content">
+                <!-- 文章将通过JavaScript动态加载 -->
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> 加载文章中...
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="script.js"></script>
+    <script>
+    // 文章详情页专用逻辑
+    document.addEventListener('DOMContentLoaded', async function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const articleId = urlParams.get('id');
+        
+        if (!articleId) {
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        try {
+            // 加载文章数据
+            const response = await fetch('articles.json');
+            const data = await response.json();
+            const article = data.articles.find(a => a.id == articleId);
+            
+            if (!article) {
+                throw new Error('文章不存在');
+            }
+            
+            // 渲染文章
+            renderArticleDetail(article);
+            
+        } catch (error) {
+            console.error('加载文章失败:', error);
+            showErrorMessage('文章加载失败');
+        }
+    });
+    
+    async function renderArticleDetail(article) {
+        const container = document.getElementById('article-content');
+        
+        try {
+            // 如果有单独的MD文件，加载它
+            let content = article.content;
+            if (article.file) {
+                const fileResponse = await fetch(article.file);
+                if (fileResponse.ok) {
+                    const markdown = await fileResponse.text();
+                    // 提取正文部分（去掉YAML front matter）
+                    const contentMatch = markdown.match(/# .+[\s\S]*$/);
+                    if (contentMatch) {
+                        content = contentMatch[0];
+                    }
+                }
+            }
+            
+            // 创建文章HTML
+            container.innerHTML = `
+                <article class="blog-post">
+                    <div class="post-header">
+                        <h1 class="post-title">${article.title}</h1>
+                        <div class="post-meta">
+                            <span class="post-date">
+                                <i class="far fa-calendar"></i> ${formatDate(article.date)}
+                            </span>
+                            <span class="post-category">
+                                <i class="fas fa-folder"></i> ${article.category}
+                            </span>
+                            <span class="post-readtime">
+                                <i class="far fa-clock"></i> ${article.readTime || '5分钟'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="post-content article-content">
+                        ${marked.parse(content)}
+                    </div>
+                    <div class="post-footer">
+                        <div class="post-tags">
+                            ${(article.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                        <a href="index.html" class="read-more">
+                            <i class="fas fa-arrow-left"></i> 返回文章列表
+                        </a>
+                    </div>
+                </article>
+            `;
+            
+            // 更新页面标题
+            document.title = `${article.title} - 炎诉的个人博客`;
+            
+        } catch (error) {
+            console.error('渲染文章失败:', error);
+            container.innerHTML = `
+                <div class="no-posts-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>文章加载失败</h3>
+                    <p>${error.message}</p>
+                    <a href="index.html" class="action-button">返回首页</a>
+                </div>
+            `;
+        }
+    }
+    
+    function formatDate(dateString) {
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        } catch (e) {
+            return dateString || '未知日期';
+        }
+    }
+    
+    function showErrorMessage(msg) {
+        const container = document.getElementById('article-content');
+        if (container) {
+            container.innerHTML = `
+                <div class="no-posts-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>${msg}</h3>
+                    <a href="index.html" class="action-button">返回首页</a>
+                </div>
+            `;
+        }
+    }
+    </script>
+</body>
+</html>
