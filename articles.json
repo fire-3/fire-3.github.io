@@ -1,0 +1,31 @@
+{
+  "articles": [
+    {
+      "id": 3,
+      "title": "不打伞的人",
+      "slug": "umbrella-man",
+      "date": "2024-01-28",
+      "category": "文学",
+      "tags": ["小说", "原创", "雨"],
+      "readTime": "10分钟",
+      "excerpt": "在终年阴雨的城市瑞根，有一位从不打伞的教授。他热爱雨天，却在城市成功驱散乌云的那一天神秘消失。",
+      "content": "# 不打伞的人\n\n那是瑞根一个再平常不过的下午：天一如往常的阴灰，空气里飘着潮湿的水汽，教室里像蒸笼一样闷热...\n\n（文章前200字）",
+      "featured": true,
+      "file": "archive/umbrella-man.md"
+    },
+    {
+      "id": 2,
+      "title": "文章标题示例",
+      "slug": "sample-post",
+      "date": "2024-01-01",
+      "category": "示例",
+      "tags": ["示例"],
+      "readTime": "5分钟",
+      "excerpt": "这是一个示例文章...",
+      "content": "示例内容...",
+      "featured": false
+    }
+  ],
+  "categories": ["文学", "技术", "生活", "学习"],
+  "totalArticles": 2
+}
