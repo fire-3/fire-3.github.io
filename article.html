@@ -74,69 +74,116 @@
     });
     
     async function renderArticleDetail(article) {
-        const container = document.getElementById('article-content');
+    const container = document.getElementById('article-content');
+    
+    try {
+        // 获取文章内容
+        let content = article.content || '';
         
-        try {
-            // 如果有单独的MD文件，加载它
-            let content = article.content;
-            if (article.file) {
+        // 如果有单独的MD文件，尝试加载
+        if (article.file) {
+            try {
                 const fileResponse = await fetch(article.file);
                 if (fileResponse.ok) {
                     const markdown = await fileResponse.text();
+                    console.log('从文件加载成功，大小:', markdown.length);
+                    
                     // 提取正文部分（去掉YAML front matter）
-                    const contentMatch = markdown.match(/# .+[\s\S]*$/);
-                    if (contentMatch) {
-                        content = contentMatch[0];
+                    // 查找第一个#开头的行作为正文开始
+                    const lines = markdown.split('\n');
+                    let contentStartIndex = 0;
+                    
+                    for (let i = 0; i < lines.length; i++) {
+                        if (lines[i].trim().startsWith('# ')) {
+                            contentStartIndex = i;
+                            break;
+                        }
+                    }
+                    
+                    content = lines.slice(contentStartIndex).join('\n');
+                    
+                    if (!content.trim()) {
+                        throw new Error('文件内容为空');
                     }
                 }
+            } catch (fileError) {
+                console.warn('加载文件失败，使用JSON内容:', fileError);
+                // 继续使用JSON中的content
             }
-            
-            // 创建文章HTML
-            container.innerHTML = `
-                <article class="blog-post">
-                    <div class="post-header">
-                        <h1 class="post-title">${article.title}</h1>
-                        <div class="post-meta">
-                            <span class="post-date">
-                                <i class="far fa-calendar"></i> ${formatDate(article.date)}
-                            </span>
-                            <span class="post-category">
-                                <i class="fas fa-folder"></i> ${article.category}
-                            </span>
-                            <span class="post-readtime">
-                                <i class="far fa-clock"></i> ${article.readTime || '5分钟'}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="post-content article-content">
-                        ${marked.parse(content)}
-                    </div>
-                    <div class="post-footer">
-                        <div class="post-tags">
-                            ${(article.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
-                        </div>
-                        <a href="index.html" class="read-more">
-                            <i class="fas fa-arrow-left"></i> 返回文章列表
-                        </a>
-                    </div>
-                </article>
-            `;
-            
-            // 更新页面标题
-            document.title = `${article.title} - 炎诉的个人博客`;
-            
-        } catch (error) {
-            console.error('渲染文章失败:', error);
-            container.innerHTML = `
-                <div class="no-posts-message">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h3>文章加载失败</h3>
-                    <p>${error.message}</p>
-                    <a href="index.html" class="action-button">返回首页</a>
-                </div>
-            `;
         }
+        
+        // 确保content不为空
+        if (!content || content.trim() === '') {
+            content = `# ${article.title}\n\n文章内容正在加载中...\n\n*如果长时间无法加载，请检查文件路径是否正确。*`;
+        }
+        
+        console.log('最终文章内容长度:', content.length);
+        
+        // 使用marked解析，确保传入有效内容
+        let parsedContent = '';
+        try {
+            parsedContent = marked.parse(content);
+        } catch (markedError) {
+            console.error('Markdown解析失败:', markedError);
+            parsedContent = `<h1>${article.title}</h1><p>文章内容解析失败，原始内容：</p><pre>${escapeHtml(content.substring(0, 500))}</pre>`;
+        }
+        
+        // 创建文章HTML
+        container.innerHTML = `
+            <article class="blog-post">
+                <div class="post-header">
+                    <h1 class="post-title">${escapeHtml(article.title)}</h1>
+                    <div class="post-meta">
+                        <span class="post-date">
+                            <i class="far fa-calendar"></i> ${formatDate(article.date)}
+                        </span>
+                        <span class="post-category">
+                            <i class="fas fa-folder"></i> ${escapeHtml(article.category)}
+                        </span>
+                        <span class="post-readtime">
+                            <i class="far fa-clock"></i> ${escapeHtml(article.readTime || '5分钟')}
+                        </span>
+                    </div>
+                </div>
+                <div class="post-content article-content">
+                    ${parsedContent}
+                </div>
+                <div class="post-footer">
+                    <div class="post-tags">
+                        ${(article.tags || []).map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
+                    </div>
+                    <a href="index.html" class="read-more">
+                        <i class="fas fa-arrow-left"></i> 返回文章列表
+                    </a>
+                </div>
+            </article>
+        `;
+        
+        // 更新页面标题
+        document.title = `${article.title} - 炎诉的个人博客`;
+        
+    } catch (error) {
+        console.error('渲染文章失败:', error);
+        container.innerHTML = `
+            <div class="no-posts-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>文章加载失败</h3>
+                <p>错误: ${error.message}</p>
+                <p>文章ID: ${article.id}</p>
+                <p>文章标题: ${article.title}</p>
+                <a href="index.html" class="action-button">返回首页</a>
+            </div>
+        `;
     }
+}
+
+// HTML转义函数
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
     
     function formatDate(dateString) {
         try {
